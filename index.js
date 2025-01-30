@@ -16,12 +16,11 @@ client.on('ready', () => {
 });
 
 const monitoredChats = [
-    '120363322327634657@g.us'
+    '120363322327634657@g.us',
 ];
 
 let targetChats = [
     '120363379376159101@g.us',
-    '120363322327634657@g.us'
 ];
 
 function getFilteredTargetChats(originalTargetChats, monitoredChatId) {
@@ -38,6 +37,22 @@ client.on('message_create', async message => {
         for (const chatId of filteredTargetChats) {
             await client.sendMessage(chatId, `${message.body}`);
             console.log(`Message forwarded to ${chatId}`);
+        }
+    }
+});
+
+client.on('message_revoke_everyone', async (after, before) => {
+    if (before) {
+        console.log(`Message deleted in ${before.from}: ${before.body || 'Media message'}`);
+
+        for (const chatId of targetChats) {
+            try {
+                let chat = await client.getChatById(chatId);
+                await client.deleteMessage(chatId, before.id.id);
+                console.log(`Deleted message in ${chatId}`);
+            } catch (error) {
+                console.log(`Failed to delete message in ${chatId}: ${error}`);
+            }
         }
     }
 });
