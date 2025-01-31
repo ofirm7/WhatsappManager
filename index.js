@@ -16,46 +16,54 @@ client.on('ready', () => {
 });
 
 const monitoredChats = [
-    '120363322327634657@g.us',
+    '120363322327634657@g.us'
 ];
 
 let targetChats = [
     '120363379376159101@g.us',
+    '120363322327634657@g.us'
 ];
 
+// Remove the monitored chat from the target chats
 function getFilteredTargetChats(originalTargetChats, monitoredChatId) {
     return originalTargetChats.filter(chatId => chatId !== monitoredChatId);
 }
 
 client.on('message_create', async message => {
-    if (message.fromMe && monitoredChats.includes(message.to)) {console.log(`Monitored a message from ${message.to}: ${message.body}`);
+    if (message.fromMe && monitoredChats.includes(message.to)) {
+        console.log(`Monitored a message from ${message.to}: ${message.body}`);
 
-        // Remove the monitored chat from the target chats
         const filteredTargetChats = getFilteredTargetChats(targetChats, message.to);
 
-        // Forward message to the filtered list of target chats
         for (const chatId of filteredTargetChats) {
-            await client.sendMessage(chatId, `${message.body}`);
+            await client.sendMessage(chatId, message.body);
             console.log(`Message forwarded to ${chatId}`);
         }
     }
 });
 
 client.on('message_revoke_everyone', async (after, before) => {
-    if (before) {
-        console.log(`Message deleted in ${before.from}: ${before.body || 'Media message'}`);
+    if (before && before.fromMe && monitoredChats.includes(before.to)) {
+        console.log(`Message deleted in monitored chat: ${before.body}`);
 
-        for (const chatId of targetChats) {
+        const filteredTargetChats = getFilteredTargetChats(targetChats, before.to);
+
+        for (const chatId of filteredTargetChats) {
             try {
                 let chat = await client.getChatById(chatId);
-                await client.deleteMessage(chatId, before.id.id);
-                console.log(`Deleted message in ${chatId}`);
-            } catch (error) {
-                console.log(`Failed to delete message in ${chatId}: ${error}`);
+                let messages = await chat.fetchMessages({ limit: 50 });
+
+                let messageToDelete = messages.find(m => m.body === before.body && m.fromMe);
+
+                if (messageToDelete) {
+                    await messageToDelete.delete(true);
+                    console.log(`Deleted message in ${chatId}`);
+                }
+            } catch (err) {
+                console.error(`Error deleting message in ${chatId}:`, err);
             }
         }
     }
 });
 
-// Start the bot
 client.initialize();
