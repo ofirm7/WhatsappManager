@@ -43,11 +43,10 @@ async function shouldSendMessage(messageBody, chatId) {
 client.on('message_create', async message => {
     await sleep(5000);
     if (message.fromMe && monitoredChats.includes(message.to)) {
-        console.log(`Monitored a message from ${message.to}: ${message.body}`);
         for (const chatId of targetChats) {
             if (await shouldSendMessage(message.body, chatId)) {
                 await client.sendMessage(chatId, message.body);
-                console.log(`Message forwarded to ${chatId}`);
+                console.log(`Message "${message.body}" forwarded from ${message.to} to ${chatId}`);
             }
         }
     }
