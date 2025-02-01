@@ -15,7 +15,7 @@ client.on('qr', qr => {
 client.on('ready', async () => {
     console.log('Bot is ready! Searching for chat...');
 
-    const chatNameToFind = 'חשוב'; // Change this to the contact or group name
+    const chatNameToFind = 'בדיקה 2'; // Change this to the contact or group name
     const chats = await client.getChats();
 
     const foundChat = chats.find(chat => chat.name.toLowerCase() === chatNameToFind.toLowerCase());
