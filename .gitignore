@@ -1,7 +1,3 @@
 node_modules/
 .wwebjs_cache/
-.wwebjs_auth/session/Crashpad/
-.wwebjs_auth/session/Default/Cache/
-.wwebjs_auth/session/Default/blob_storage/
-.wwebjs_auth/session/Default/Code Cache/
-.wwebjs_auth/session/Default/databases/
+.wwebjs_auth/
