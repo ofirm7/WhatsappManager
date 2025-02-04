@@ -1,5 +1,17 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const fs = require('fs');
+
+let monitoredChats = [];
+fs.readFile('monitored_chats.txt', 'utf8', (err, data) => {
+  if (err) {
+    console.error('Error reading file:', err);
+    console.log('Check if the file exists');
+    return;
+  }
+  monitoredChats = data.split('\n').map(line => line.trim());
+  console.log('Monitored chats:', monitoredChats);
+});
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -14,12 +26,6 @@ client.on('qr', qr => {
 client.on('ready', () => {
     console.log('WhatsApp bot is running and listening for your messages...');
 });
-
-const monitoredChats = [
-    '120363379376159101@g.us',
-    '120363322327634657@g.us',
-    '120363394011683528@g.us',
-];
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
