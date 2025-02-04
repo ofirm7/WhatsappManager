@@ -6,7 +6,7 @@ let monitoredChats = [];
 fs.readFile('monitored_chats.txt', 'utf8', (err, data) => {
   if (err) {
     console.error('Error reading file:', err);
-    console.log('Check if the file exists');
+    console.log('Check if the file "monitored_chats.txt" exists.');
     return;
   }
   monitoredChats = data.split('\n').map(line => line.trim());
