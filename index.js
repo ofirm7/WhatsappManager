@@ -13,61 +13,81 @@ fs.readFile('monitored_chats.txt', 'utf8', (err, data) => {
   console.log('Monitored chats:', monitoredChats);
 });
 
+let messageEnding = null;
+fs.readFile('message_ending.txt', 'utf8', (err, data) => {
+  if (err) {
+    console.error('Error reading file:', err);
+    console.log('Check if the file "message_ending.txt" exists.');
+    return;
+  }
+  messageEnding = '\n\n' + data.split('\n').map(line => line.trim()).join('');
+});
+
 const client = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: { headless: true }
+  authStrategy: new LocalAuth(),
+  webVersionCache: { 
+    type: 'remote', 
+    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2341.18.html', 
+  },
+  puppeteer: {
+    executablePath: process.env.CHROME_PATH,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: true,
+  },
 });
 
 client.on('qr', qr => {
-    console.log('Scan this QR Code to login:');
-    qrcode.generate(qr, { small: true });
+  console.log('Scan this QR Code to login:');
+  qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', () => {
-    console.log('WhatsApp bot is running and listening for your messages...');
+  console.log('WhatsApp bot is running and listening for your messages...');
 });
 
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function getMessageFromChat(messageBody, chatId) {
-    let chat = await client.getChatById(chatId);
-    let messages = await chat.fetchMessages({ limit: 50 });
-    return messages.find(m => m.body === messageBody && m.fromMe);
+  messageBody = messageBody.replace(messageEnding, '');
+  let chat = await client.getChatById(chatId);
+  let messages = await chat.fetchMessages({ limit: 20 });
+  return messages.find(m => m.body.replace(messageEnding, '') === messageBody && m.fromMe);
 }
 
-async function shouldSendMessage(messageBody, chatId) {
-    message = await getMessageFromChat(messageBody, chatId);
-    return !message;
+async function isMessageInChat(messageBody, chatId) {
+  let foundMessage = await getMessageFromChat(messageBody, chatId);
+  return foundMessage;
 }
 
 client.on('message_create', async message => {
-    await sleep(5000);
-    if (message.fromMe && monitoredChats.includes(message.to)) {
-        for (const chatId of monitoredChats) {
-            if (await shouldSendMessage(message.body, chatId)) {
-                await client.sendMessage(chatId, message.body);
-                console.log(`Message "${message.body}" forwarded from ${message.to} to ${chatId}`);
-            }
-        }
+  await sleep(5000);
+  if (message.fromMe && monitoredChats.includes(message.to)) {
+    for (const chatId of monitoredChats) {
+      let isMessageInCurrentChat = await isMessageInChat(message.body, chatId);
+      if (!isMessageInCurrentChat) {
+        await client.sendMessage(chatId, message.body + messageEnding);
+        console.log(`Message "${message.body}" forwarded from ${message.to} to ${chatId}`);
+      }
     }
+  }
 });
 
 client.on('message_revoke_everyone', async (after, before) => {
-    if (before && before.fromMe && monitoredChats.includes(before.to)) {
-        for (const chatId of monitoredChats) {
-            try {
-                let messageToDelete = await getMessageFromChat(before.body, chatId);
-                if (messageToDelete) {
-                    await messageToDelete.delete(true);
-                    console.log(`Deleted the message "${before.body}" in ${chatId}`);
-                }
-            } catch (err) {
-                console.error(`Error deleting the message "${before.body}" in ${chatId}:`, err);
-            }
+  if (before && before.fromMe && monitoredChats.includes(before.to)) {
+    for (const chatId of monitoredChats) {
+      try {
+        let messageToDelete = await getMessageFromChat(before.body, chatId);
+        if (messageToDelete) {
+          await messageToDelete.delete(true);
+          console.log(`Deleted the message "${before.body}" in ${chatId}`);
         }
+      } catch (err) {
+        console.error(`Error deleting the message "${before.body}" in ${chatId}:`, err);
+      }
     }
+  }
 });
 
 client.initialize();
