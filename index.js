@@ -24,16 +24,8 @@ fs.readFile('message_ending.txt', 'utf8', (err, data) => {
 });
 
 const client = new Client({
-  authStrategy: new LocalAuth(),
-  webVersionCache: { 
-    type: 'remote', 
-    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2341.18.html', 
-  },
-  puppeteer: {
-    executablePath: process.env.CHROME_PATH,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: true,
-  },
+    authStrategy: new LocalAuth(),
+    puppeteer: { headless: true }
 });
 
 client.on('qr', qr => {
