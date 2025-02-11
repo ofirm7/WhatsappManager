@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "firebase": "^11.3.0",
+    "helpers": "^0.0.6",
     "prompt-sync": "^4.2.0",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.26.0"

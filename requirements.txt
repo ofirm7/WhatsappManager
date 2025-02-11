@@ -2,3 +2,5 @@ whatsapp-web.js
 qrcode-terminal
 puppeteer
 prompt-sync
+firebase
+helpers
