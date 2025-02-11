@@ -1,17 +1,7 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
-const { getMainChat, getChats, initializeFirebaseApp } = require('./firebase_tools');
-
-let messageEnding = null;
-fs.readFile('message_ending.txt', 'utf8', (err, data) => {
-  if (err) {
-    console.error('Error reading file:', err);
-    console.log('Check if the file "message_ending.txt" exists.');
-    return;
-  }
-  messageEnding = '\n\n' + data.split('\n').map(line => line.trim()).join('');
-});
+const { getMessageEnding, getMainChat, getChats, initializeFirebaseApp } = require('./firebase_tools');
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -34,29 +24,34 @@ const getChatId = async (chatNameToFind) => {
     }
 };
 
-let mainChatId;
-let targetChats = [];
-
-client.on('ready', async () => {
-    console.log('WhatsApp bot is running and listening for your messages...');
-
-    // Fetch and process Main Chat
-    let rawMainChat = await getMainChat();
-    if (rawMainChat && typeof rawMainChat === 'object') {
-        let chatEntries = Object.entries(rawMainChat);
-        if (chatEntries.length === 1) {
-            let [mainChatName, chatId] = chatEntries[0];
-            mainChatId = chatId.trim() ? chatId : await getChatId(mainChatName);
+const fetchMessageEnding = async () => {
+    let messageEndingText;
+    let rawMessageEnding = await getMessageEnding();
+    if ( rawMessageEnding && typeof rawMessageEnding === 'object') {
+            let chatEntries = Object.entries(rawMessageEnding);
+            if (chatEntries.length === 1) {
+                messageEndingText = "\n\n" + chatEntries[0][1];
+            }
         }
-    }
-    console.log("Main Chat ID:", mainChatId);
+    return messageEndingText
+};
 
-    // Fetch and process Monitored Chats
+const fetchMainChatId = async () => {
+    let mainChatId;
+    let mainChat = await getMainChat();
+    if (mainChat && typeof mainChat === 'object') {
+            let chatEntries = Object.entries(mainChat);
+            if (chatEntries.length === 1) {
+                let [mainChatName, chatId] = chatEntries[0];
+                mainChatId = chatId.trim() ? chatId : await getChatId(mainChatName);
+            }
+        }
+    return mainChatId
+};
+
+const fetchTargetChatsIds = async () => {
     let rawChats = await getChats();
-    console.log("Raw Chats from Firebase:", JSON.stringify(rawChats, null, 2));
-
     let updatedtargetChats = [];
-
     if (Array.isArray(rawChats)) {
         for (const obj of rawChats) {
             let chatEntries = Object.entries(obj); // Extract key-value pairs
@@ -74,26 +69,41 @@ client.on('ready', async () => {
     } else {
         console.error("Expected an array from getChats(), but got:", rawChats);
     }
+    return updatedtargetChats;
+};
 
-    targetChats = updatedtargetChats;
-    console.log("Final target Chats:", targetChats);
+let mainChatId;
+let targetChats = [];
+let messageEnding;
+const fetchConfiguration = async () => {
+    messageEnding = await fetchMessageEnding();
+    mainChatId = await fetchMainChatId();
+    targetChats = await fetchTargetChatsIds();
+    
+    console.log("Main Chat ID:", mainChatId);
+    console.log("Raw Chats from Firebase:", JSON.stringify(targetChats, null, 2));
+};
+
+client.on('ready', async () => {
+    await fetchConfiguration()
+    console.log('WhatsApp bot is running and listening for your messages...');
 });
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-}
+};
 
 async function getMessageFromChat(messageBody, chatId) {
     messageBody = messageBody.replace(messageEnding, '');
     let chat = await client.getChatById(chatId);
     let messages = await chat.fetchMessages({ limit: 20 });
     return messages.find(m => m.body.replace(messageEnding, '') === messageBody && m.fromMe);
-}
+};
 
 async function isMessageInChat(messageBody, chatId) {
     let foundMessage = await getMessageFromChat(messageBody, chatId);
     return foundMessage;
-}
+};
 
 client.on('message_create', async message => {
     await sleep(5000);

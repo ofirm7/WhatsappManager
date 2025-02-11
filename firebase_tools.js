@@ -1,6 +1,7 @@
 const { initializeApp } = require("firebase/app");
 const { collection, getFirestore, getDocs, query } = require("firebase/firestore");
 
+
 const firebaseConfig = {
   apiKey: "AIzaSyAslOqXGjXegT_N5NH_dDnQ5e7pPk9WnlE",
   authDomain: "whatsappmanager-726b3.firebaseapp.com",
@@ -34,6 +35,7 @@ const getChats = async () => {
     docSnap.forEach((doc) => {
         finalData.push(doc.data());
     });
+
     return finalData;
 };
 
@@ -52,18 +54,39 @@ const getMainChat = async () => {
     }
 
     let mainChat;
-
     docSnap.forEach((doc) => {
         mainChat = doc.data();
     });
     return mainChat;
 };
 
+const getMessageEnding = async () => {
+    if (!firestoreDB) {
+        throw new Error("Firestore has not been initialized. Call initializeFirebaseApp() first.");
+    }
+
+    const collectionRef = collection(firestoreDB, "message-ending");
+    const q = query(collectionRef);
+
+    const docSnap = await getDocs(q);
+
+    if (docSnap.empty) {
+        throw new Error("No documents found in 'nessage-ending' collection.");
+    }
+
+    let messageEnding;
+
+    docSnap.forEach((doc) => {
+        messageEnding = doc.data();
+    });
+    return messageEnding;
+};
 
 initializeFirebaseApp();
 
 module.exports = {
     initializeFirebaseApp,
     getChats,
-    getMainChat
+    getMainChat,
+    getMessageEnding
 };
