@@ -87,6 +87,12 @@ const fetchConfiguration = async () => {
 client.on('ready', async () => {
     await fetchConfiguration()
     console.log('WhatsApp bot is running and listening for your messages...');
+    function scheduleConfigurationFetch() {
+        fetchConfiguration();
+        setInterval(fetchConfiguration, 2 * 60 * 1000);
+    }
+    
+    scheduleConfigurationFetch()
 });
 
 function sleep(ms) {
@@ -98,11 +104,6 @@ async function getMessageFromChat(messageBody, chatId) {
     let chat = await client.getChatById(chatId);
     let messages = await chat.fetchMessages({ limit: 20 });
     return messages.find(m => m.body.replace(messageEnding, '') === messageBody && m.fromMe);
-};
-
-async function isMessageInChat(messageBody, chatId) {
-    let foundMessage = await getMessageFromChat(messageBody, chatId);
-    return foundMessage;
 };
 
 client.on('message_create', async message => {
