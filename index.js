@@ -5,8 +5,23 @@ const { getMessageEnding, getMainChat, getChats, initializeFirebaseApp } = requi
 
 const client = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: { headless: true }
+    puppeteer: {
+        headless: true, // Always keep headless mode true for servers
+        executablePath: process.platform === "win32"
+            ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"  // Windows Path
+            : "/usr/bin/google-chrome-stable",  // Ubuntu Path
+        args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--disable-gpu"
+        ]
+    }
 });
+
 
 client.on('qr', qr => {
     console.log('Scan this QR Code to login:');
