@@ -6,7 +6,7 @@ const { getMessageEnding, getMainChat, getChats, initializeFirebaseApp } = requi
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        headless: true, // Always keep headless mode true for servers
+        headless: false, // Always keep headless mode true for servers
         executablePath: process.platform === "win32"
             ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"  // Windows Path
             : "/usr/bin/google-chrome-stable",  // Ubuntu Path
