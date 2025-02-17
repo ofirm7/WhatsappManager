@@ -17,10 +17,15 @@ const client = new Client({
             "--disable-accelerated-2d-canvas",
             "--no-first-run",
             "--no-zygote",
-            "--disable-gpu"
+            "--disable-gpu",
+            '--disable-software-rasterizer',
+            '--disable-features=site-per-process',
+            '--remote-debugging-port=9222', // Useful for debugging
         ]
     }
 });
+
+
 
 
 client.on('qr', qr => {
